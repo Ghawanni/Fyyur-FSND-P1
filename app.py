@@ -12,6 +12,7 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
+from flask_migrate import Migrate
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -20,8 +21,9 @@ app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
-# TODO: connect to a local postgresql database
+# NOTE: connect to a local postgresql database
 
 #----------------------------------------------------------------------------#
 # Models.
@@ -31,13 +33,29 @@ class Venue(db.Model):
     __tablename__ = 'Venue'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
+    name = db.Column(db.String(120), unique=True)
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
     address = db.Column(db.String(120))
     phone = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
+    image_link = db.Column(db.String(500), unique=True)
     facebook_link = db.Column(db.String(120))
+    genres = db.Column(db.String(120))
+
+
+#     {
+#     "city": "San Francisco",
+#     "state": "CA",
+#     "venues": [{
+#       "id": 1,
+#       "name": "The Musical Hop",
+#       "num_upcoming_shows": 0,
+#     }, {
+#       "id": 3,
+#       "name": "Park Square Live Music & Coffee",
+#       "num_upcoming_shows": 1,
+#     }]
+#   }
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -45,13 +63,32 @@ class Artist(db.Model):
     __tablename__ = 'Artist'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
+    name = db.Column(db.String(120), unique=True)
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
     phone = db.Column(db.String(120))
     genres = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
+    image_link = db.Column(db.String(500), unique=True)
     facebook_link = db.Column(db.String(120))
+    website = db.Column(db.String(120))
+    seeking_venue = db.Column(db.Boolean)
+    seeking_description = db.Column(db.String(200))
+    # create a relationship between an artist and their show(s)
+    shows = db.relationship('Show', backref='artist', lazy=True)
+
+class Show(db.Model):
+    __tablename__ = 'Show'
+
+    id = db.Column(db.Integer, primary_key=True)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), nullable=False)
+    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), nullable=False)
+    venue_name = db.Column(db.String(120), db.ForeignKey('Venue.name'), unique=True)
+    artist_name = db.Column(db.String(120), db.ForeignKey('Artist.name'), unique=True)
+    venue_image_link = db.Column(db.String(500), db.ForeignKey('Venue.image_link'), unique=True)
+    artist_image_link = db.Column(db.String(500), db.ForeignKey('Artist.image_link'), unique=True)
+    start_time = db.Column(db.DateTime)
+
+
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -87,6 +124,7 @@ def index():
 def venues():
   # TODO: replace with real venues data.
   #       num_shows should be aggregated based on number of upcoming shows per venue.
+  #       Group query by city and state
   data=[{
     "city": "San Francisco",
     "state": "CA",
@@ -274,6 +312,9 @@ def search_artists():
 def show_artist(artist_id):
   # shows the venue page with the given venue_id
   # TODO: replace with real venue data from the venues table, using venue_id
+
+      #TODO:  divide all shows into past & upcoming based on show date
+      #       implement past/upcoming show count based on the query 
   data1={
     "id": 4,
     "name": "Guns N Petals",
