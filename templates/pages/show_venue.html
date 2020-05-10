@@ -74,6 +74,31 @@
 		{% endfor %}
 	</div>
 </section>
+<section>
+	<div class="row">
+		<div class="col-sm-6">
+			<button id="deleteVenueBtn" onclick="deleteVenue()" class="btn btn-danger"><strong>Delete Venue</strong></button>
+		</div>
+	</div>
+</section>
+
+<script>
+	path = window.location.pathname.split('/');
+	let venueId = path[path.length-1];
+
+	document.getElementById('deleteVenueBtn');
+	function deleteVenue() { 
+		fetch('/venues/' + venueId, {
+			method: "DELETE",
+		}).then((response) => {
+			window.location = '/';
+		})
+    .catch(function(err) {  
+        console.log('Failed to fetch page: ', err);  
+    });
+	}
+
+</script>
 
 {% endblock %}
 

@@ -259,14 +259,12 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-  # TODO: insert form data as a new Venue record in the db, instead
-  # TODO: modify data to be the data object returned from db insertion
+  # TODO insert form data as a new Venue record in the db, instead
+  # TODO modify data to be the data object returned from db insertion
   venueForm = request.form.copy()
-  print (venueForm)
   error = False
   try:
     genresString = ",".join(venueForm.getlist('genres'))
-    print(genresString)
     newVenue = Venue(name=venueForm['name'], 
       city=venueForm['city'], state=venueForm['state'], address=venueForm['address'], 
       phone=venueForm['phone'], facebook_link=venueForm['facebook_link'], image_link=venueForm['image_link'], 
@@ -288,7 +286,7 @@ def create_venue_submission():
       return render_template('pages/home.html')
 
   # on successful db insert, flash success
-  # TODO: on unsuccessful db insert, flash an error instead.
+  # TODO on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
 
@@ -296,11 +294,25 @@ def create_venue_submission():
 def delete_venue(venue_id):
   # TODO: Complete this endpoint for taking a venue_id, and using
   # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
-
-  # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
-  # clicking that button delete it from the db then redirect the user to the homepage
-  return None
-
+  venueName = ""
+  error = False
+  try:
+    venueToDelete = Venue.query.get(venue_id)
+    venueName = venueToDelete.name
+    db.session.delete(venueToDelete)
+    db.session.commit()
+  except:
+    db.session.rollback()
+    error = True
+    print(sys.exc_info())
+  finally:
+    db.session.close()
+  if error:
+    abort(400)
+  else:
+    flash('Venue ' + venueName + ' was successfully deleted!')
+    return render_template('pages/home.html')
+    # return redirect(url_for('index'))
 #  Artists
 #  ----------------------------------------------------------------
 @app.route('/artists')
