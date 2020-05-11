@@ -77,6 +77,14 @@ class Artist(db.Model):
     seeking_description = db.Column(db.String(200))
     # create a relationship between an artist and their show(s)
     # shows = db.relationship('Show', backref='artist', lazy=True)
+    
+    def __repr__(self):
+      return f'''<Artist id({self.id})
+       name: {self.name},
+       city:{self.city},
+       genres:{self.genres}
+       >'''
+
 
 class Show(db.Model):
     __tablename__ = 'Show'
@@ -292,7 +300,7 @@ def create_venue_submission():
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
-  # TODO: Complete this endpoint for taking a venue_id, and using
+  # TODO Complete this endpoint for taking a venue_id, and using
   # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
   venueName = ""
   error = False
@@ -318,6 +326,8 @@ def delete_venue(venue_id):
 @app.route('/artists')
 def artists():
   # TODO: replace with real data returned from querying the database
+  artists = Artist.query.all()
+  print(artists)
   data=[{
     "id": 4,
     "name": "Guns N Petals",
@@ -491,14 +501,35 @@ def create_artist_form():
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
   # called upon submitting the new artist listing form
-  # TODO: insert form data as a new Venue record in the db, instead
-  # TODO: modify data to be the data object returned from db insertion
+  # TODO insert form data as a new Venue record in the db, instead
+  # TODO modify data to be the data object returned from db insertion
+  artistForm = request.form.copy()
+  error = False
+  try:
+    genresString = ",".join(artistForm.getlist('genres'))
+    newArtist = Artist(name=artistForm['name'], 
+      city=artistForm['city'], state=artistForm['state'], phone=artistForm['phone'],
+      facebook_link=artistForm['facebook_link'], image_link=artistForm['image_link'], 
+      genres=genresString)
+
+    db.session.add(newArtist)
+    db.session.commit()
+  except:
+    db.session.rollback()
+    error = True
+    print(sys.exc_info())
+  finally:  
+    db.session.close()
+    if error:
+      flash('An error occurred. Artist ' + request.form['name'] + ' could not be listed.')
+      abort(400)
+    else:
+      flash('Artist ' + request.form['name'] + ' was successfully listed!')
+      return render_template('pages/home.html')
 
   # on successful db insert, flash success
-  flash('Artist ' + request.form['name'] + ' was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
+  # TODO on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
-  return render_template('pages/home.html')
 
 
 #  Shows
